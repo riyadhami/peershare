@@ -1,4 +1,4 @@
-/..package p2p.service;
+package p2p.service;
 
 import p2p.utils.UploadUtils;
 
