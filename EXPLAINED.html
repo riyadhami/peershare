@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>peershare (Python) — Worked Walkthrough</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#161a23; --panel2:#1c212c; --text:#dbe2ef; --muted:#8a93a6;
+    --accent:#5fd0ff; --accent2:#ffb454; --good:#7ee787; --bad:#ff7b72; --border:#272d3a;
+    --code:#0c0e14;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.55;}
+  a{color:var(--accent);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  code,pre{font-family:"Cascadia Code","Fira Code",Consolas,"SF Mono",Menlo,monospace;}
+  pre{margin:0;}
+  .layout{display:flex;min-height:100vh;}
+  nav.toc{
+    width:280px;flex:0 0 280px;background:var(--panel);border-right:1px solid var(--border);
+    position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 14px;
+  }
+  nav.toc h3{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    margin:18px 0 6px 8px;}
+  nav.toc h3:first-child{margin-top:0;}
+  nav.toc a{display:block;padding:6px 8px;border-radius:6px;color:var(--text);font-size:13.5px;}
+  nav.toc a:hover{background:var(--panel2);text-decoration:none;}
+  nav.toc a.lvl2{padding-left:20px;font-size:12.5px;color:var(--muted);}
+  main{flex:1;max-width:980px;padding:40px 56px 120px;}
+  header.hero{margin-bottom:40px;}
+  header.hero h1{font-size:32px;margin:0 0 8px;}
+  header.hero p{color:var(--muted);font-size:16px;max-width:760px;}
+  .badge{display:inline-block;background:var(--panel2);border:1px solid var(--border);
+    border-radius:20px;padding:3px 12px;font-size:12px;color:var(--accent);margin-right:8px;}
+  section{margin-bottom:64px;scroll-margin-top:20px;}
+  section h2{font-size:24px;border-bottom:1px solid var(--border);padding-bottom:10px;
+    margin-top:0;display:flex;align-items:center;gap:10px;}
+  section h2 .num{background:var(--accent);color:#001018;border-radius:6px;
+    font-size:14px;padding:2px 9px;font-weight:700;}
+  section h3{font-size:18px;color:var(--accent2);margin-top:36px;}
+  .file-pill{font-family:monospace;background:var(--panel2);border:1px solid var(--border);
+    padding:2px 8px;border-radius:6px;color:#fff;font-size:13px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:16px 0;}
+  .step{border-left:3px solid var(--accent);background:var(--panel);border-radius:0 10px 10px 0;
+    padding:14px 20px;margin:14px 0;}
+  .step .step-label{color:var(--accent);font-weight:700;font-size:12.5px;letter-spacing:.05em;
+    text-transform:uppercase;margin-bottom:6px;}
+  .why{border-left:3px solid var(--accent2);background:#1d1810;border-radius:0 10px 10px 0;
+    padding:12px 20px;margin:14px 0;}
+  .why .label{color:var(--accent2);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;}
+  .bug{border-left:3px solid var(--bad);background:#21130f;border-radius:0 10px 10px 0;
+    padding:12px 20px;margin:14px 0;}
+  .bug .label{color:var(--bad);font-weight:700;font-size:12px;text-transform:uppercase;}
+  pre.code{background:var(--code);border:1px solid var(--border);border-radius:8px;
+    padding:16px 18px;overflow-x:auto;font-size:13px;margin:10px 0 18px;}
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .com{color:#6b7280;font-style:italic;}
+  .fn{color:#d2a8ff;} .num2{color:#79c0ff;} .builtin{color:#ffa657;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;}
+  th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;font-size:13.5px;}
+  th{background:var(--panel2);color:var(--accent);}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0;}
+  .flow .box{background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+    padding:10px 14px;font-size:13px;font-family:monospace;}
+  .flow .arrow{color:var(--muted);}
+  .ascii{background:var(--code);border:1px solid var(--border);border-radius:8px;
+    padding:16px;font-size:12.5px;overflow-x:auto;white-space:pre;}
+  .answer{background:#0f2418;border:1px solid #1f5c3a;border-radius:8px;padding:14px 18px;margin-top:10px;}
+  .answer .label{color:var(--good);font-weight:700;font-size:12px;text-transform:uppercase;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:1100px){.grid2{grid-template-columns:1fr;}}
+  .toplink{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);}
+  .pillrow{margin-bottom:18px;}
+  hr.soft{border:none;border-top:1px solid var(--border);margin:30px 0;}
+  ::selection{background:#264f78;}
+  .glossary dt{color:var(--accent);font-weight:600;margin-top:10px;}
+  .glossary dd{margin:2px 0 0 0;color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc">
+  <h3>peershare (Python)</h3>
+  <a href="#overview">0. Overview</a>
+  <a href="#architecture">1. Big picture</a>
+  <a href="#readme">2. README, explained</a>
+  <h3>Code, ground up</h3>
+  <a href="#upload_utils">3. upload_utils.py</a>
+  <a href="#file_sharer">4. file_sharer.py</a>
+  <a href="#multipart_parser">5. multipart_parser.py</a>
+  <a href="#file_controller">6. file_controller.py</a>
+  <a class="lvl2" href="#fc-threadpool">6.1 ThreadPoolHTTPServer</a>
+  <a class="lvl2" href="#fc-handler">6.2 peershareRequestHandler</a>
+  <a class="lvl2" href="#fc-upload">6.3 _handle_upload</a>
+  <a class="lvl2" href="#fc-download">6.4 _handle_download</a>
+  <a class="lvl2" href="#fc-controller">6.5 FileController</a>
+  <a href="#app">7. app.py</a>
+  <h3>Worked example</h3>
+  <a href="#worked">8. Trace a real upload + download</a>
+  <h3>Reference</h3>
+  <a href="#why">9. Why it's built this way</a>
+  <a href="#glossary">10. Glossary</a>
+</nav>
+
+<main>
+
+<header class="hero" id="overview">
+  <span class="badge">Python 3 · stdlib only</span>
+  <span class="badge">P2P file sharing</span>
+  <span class="badge">port of a Java project</span>
+  <h1>peershare (Python) — explained from the ground up</h1>
+  <p>This is a worked walkthrough of <code>peershare-py</code>: every class, every function, the
+  README, and the reasoning behind each design choice. It's organized like a worked math problem —
+  code first, then numbered steps explaining exactly what happens and <em>why</em> it was built that way.</p>
+</header>
+
+<section id="architecture">
+  <h2><span class="num">1</span> Big picture</h2>
+  <p>peershare does two completely different jobs, and it's important to keep them separate in your head:</p>
+  <ol>
+    <li><strong>An HTTP API</strong> (port 8080) that the Next.js UI talks to — upload a file, get back a port number.</li>
+    <li><strong>A raw TCP file-transfer protocol</strong> — a one-shot, one-file mini-server that opens on
+    <em>that</em> port number so a second person (the "peer" — could be your phone, could be a friend) can
+    connect directly and stream the file down, with no HTTP involved at all.</li>
+  </ol>
+  <p>The "invite code" you see in the UI <em>is</em> the TCP port number. That's the whole trick of this project.</p>
+
+  <div class="ascii">
+┌─────────────┐        POST /upload (multipart)        ┌──────────────────────────┐
+│  Browser /   │ ──────────────────────────────────────▶│  peershareRequestHandler  │
+│  Next.js UI  │                                         │  (http.server, :8080)   │
+│              │ ◀────────────────────────────────────── │  saves file, picks port │
+└─────────────┘        { "port": 51263 }                 └──────────┬───────────────┘
+                                                                      │ offer_file() / start_file_server()
+                                                                      ▼
+                                                           ┌──────────────────────┐
+                                                           │      FileSharer       │
+                                                           │  raw socket.socket()  │
+                                                           │  listening on :51263  │
+                                                           └──────────┬────────────┘
+                                                                      │ "Filename: x\n" + raw bytes
+GET /download/51263                                                  │
+┌─────────────┐  (browser asks the API server,                       │
+│  Peer /      │   which then opens a *second*, plain                │
+│  phone       │   TCP socket to localhost:51263                     ▼
+│              │   on the API's behalf)               ┌─────────────────────────────┐
+└──────┬───────┘ ◀─────────────────────────────────────│ socket.connect(("localhost",│
+       │              raw file bytes, streamed         │              51263))        │
+       ▼                                               └─────────────────────────────┘
+  saved file
+  </div>
+
+  <div class="why">
+    <div class="label">Why two protocols instead of just serving the file over HTTP?</div>
+    The project exists to teach raw socket programming and a hand-rolled wire protocol, not to be the
+    most efficient file-sharing app. Splitting "control plane" (HTTP: who, what, give me a port) from
+    "data plane" (raw TCP: just send me the bytes) is also a real pattern used by protocols like FTP
+    and BitTorrent.
+  </div>
+</section>
+
+<section id="readme">
+  <h2><span class="num">2</span> README, explained</h2>
+  <p>The README is short on purpose — it's a table of "what's hand-rolled vs. what's stdlib," plus run
+  instructions. Here's what each row actually buys you:</p>
+
+  <table>
+    <tr><th>README claim</th><th>What it really means</th></tr>
+    <tr>
+      <td><code>http.server.HTTPServer</code> + <code>BaseHTTPRequestHandler</code></td>
+      <td>We didn't write our own HTTP request-line/header parser. Python's stdlib already has one
+      built in (just like the Java original leaned on the JDK's <code>com.sun.net.httpserver.HttpServer</code>
+      instead of parsing HTTP by hand). The thing we <em>do</em> write ourselves is everything inside
+      each handler method.</td>
+    </tr>
+    <tr>
+      <td>Custom <code>ThreadPoolHTTPServer</code></td>
+      <td><code>http.server</code> by default handles one request at a time on the main thread. We override
+      <code>process_request</code> so each connection is handed to a fixed pool of 10 worker threads —
+      manually replicating Java's <code>Executors.newFixedThreadPool(10)</code> rather than using
+      Python's built-in <code>socketserver.ThreadingMixIn</code> (which spawns an <em>unbounded</em>
+      number of threads — one per request, no cap).</td>
+    </tr>
+    <tr>
+      <td>Hand-rolled multipart parser</td>
+      <td>No <code>cgi</code>, no <code>email.parser</code>, no <code>python-multipart</code>. We manually
+      search the raw request bytes for <code>filename="</code>, <code>Content-Type:</code>, and the
+      MIME boundary marker. This is the part of the project that's specifically about understanding
+      how a file upload is actually encoded on the wire.</td>
+    </tr>
+    <tr>
+      <td>Raw-socket P2P transfer</td>
+      <td>The actual file bytes never touch the multipart parser or HTTP server again after upload.
+      A brand new <code>socket.socket()</code> is opened on a random high port, and bytes are pushed
+      down it with a single custom text header in front.</td>
+    </tr>
+  </table>
+
+  <h3>Run instructions</h3>
+  <pre class="code"><span class="builtin">python</span> app.py</pre>
+  <p>Starts the API on port <strong>8080</strong>. Because the endpoints (<code>POST /upload</code>,
+  <code>GET /download/&#123;port&#125;</code>) match the original Java API exactly, the existing
+  Next.js frontend in <code>../peershare-main/ui</code> needs zero changes — its
+  <code>next.config.js</code> rewrites already point at <code>http://localhost:8080</code>.</p>
+
+  <div class="bug">
+    <div class="label">Bug fixed during the port</div>
+    Java's <code>UploadUtils.generateCode()</code> computed
+    <code>random.nextInt((DYNAMIC_ENDING_PORT - DYNAMIC_STARTING_PORT) + DYNAMIC_STARTING_PORT)</code>.
+    Walk the arithmetic: that's <code>nextInt(65535)</code>, which returns a value in
+    <code>[0, 65535)</code> — <em>not</em> restricted to the intended 49152–65535 "dynamic/private"
+    port range at all. It could hand out port 80, port 22, or port 0. The Python version fixes this
+    with <code>random.randint(49152, 65535)</code>, which is properly bounded on both ends.
+    See <a href="#upload_utils">§3</a>.
+  </div>
+</section>
+
+<hr class="soft">
+
+<section id="upload_utils">
+  <h2><span class="num">3</span> <span class="file-pill">p2p/upload_utils.py</span></h2>
+  <p>The smallest file in the project — one job: generate a random "invite code" (which, recall, is
+  literally a TCP port number).</p>
+
+  <pre class="code"><span class="kw">import</span> random
+
+DYNAMIC_STARTING_PORT = <span class="num2">49152</span>
+DYNAMIC_ENDING_PORT = <span class="num2">65535</span>
+
+
+<span class="kw">def</span> <span class="fn">generate_code</span>() -> <span class="builtin">int</span>:
+    <span class="str">"""Pick a random port in the dynamic/private port range (49152-65535)."""</span>
+    <span class="kw">return</span> random.randint(DYNAMIC_STARTING_PORT, DYNAMIC_ENDING_PORT)</pre>
+
+  <div class="step">
+    <div class="step-label">Step 1 — why 49152–65535 specifically?</div>
+    These are the <strong>dynamic/private/ephemeral</strong ports defined by IANA — the range
+    operating systems and applications are free to use for short-lived, ad-hoc purposes, as opposed
+    to "well-known" ports (0–1023, e.g. 80 for HTTP, 443 for HTTPS, 22 for SSH) which usually require
+    elevated privileges to bind, or "registered" ports (1024–49151) which are reserved for specific
+    named services. Picking from this range minimizes the chance of colliding with something already
+    running on the machine.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — <code>random.randint(a, b)</code> is inclusive on both ends</div>
+    Unlike Java's <code>Random.nextInt(bound)</code> (which is exclusive of <code>bound</code> and
+    starts at 0), Python's <code>randint(a, b)</code> returns a value where <code>a &lt;= x &lt;= b</code>.
+    That's exactly the semantics we want here — no off-by-one translation needed, which is precisely
+    where the original Java code went wrong (see the bug box in §2).
+  </div>
+  <div class="why">
+    <div class="label">Why is this its own tiny module instead of inline code?</div>
+    Mirrors the original Java structure 1:1 (<code>UploadUtils.java</code>) so the port stays easy
+    to compare line-by-line against the source project, and so <code>FileSharer</code> doesn't need
+    to know anything about port-range constants.
+  </div>
+</section>
+
+<section id="file_sharer">
+  <h2><span class="num">4</span> <span class="file-pill">p2p/file_sharer.py</span></h2>
+  <p>This is the data-plane half of the app — the raw-socket file server. No HTTP anywhere in this file.</p>
+
+  <h3>The class and its state</h3>
+  <pre class="code"><span class="kw">class</span> <span class="fn">FileSharer</span>:
+    <span class="str">"""
+    Hands out a one-time-use port for each uploaded file, then runs a
+    tiny raw-socket file server on that port so a peer can connect and
+    stream the bytes down directly (no HTTP involved in the transfer).
+    """</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        self.available_files = &#123;&#125;</pre>
+
+  <div class="step">
+    <div class="step-label">Step 1 — the registry</div>
+    <code>available_files</code> is a plain dict mapping <code>port number → absolute file path on disk</code>.
+    One <code>FileSharer</code> instance lives for the lifetime of the server process (it's created
+    once in <code>FileController.__init__</code>), so every upload during that process's life adds
+    one more entry.
+  </div>
+
+  <h3><code>offer_file</code> — claim a free port</h3>
+  <pre class="code"><span class="kw">def</span> <span class="fn">offer_file</span>(self, file_path: <span class="builtin">str</span>) -> <span class="builtin">int</span>:
+    <span class="kw">while</span> <span class="builtin">True</span>:
+        port = upload_utils.generate_code()
+        <span class="kw">if</span> port <span class="kw">not in</span> self.available_files:
+            self.available_files[port] = file_path
+            <span class="kw">return</span> port</pre>
+  <div class="step">
+    <div class="step-label">Step 1 — generate, then check</div>
+    Roll a random port via <code>upload_utils.generate_code()</code>.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — collision retry loop</div>
+    If that port is already claimed by a different file (rare, but the random range is only ~16,000
+    wide), loop and roll again. This is a classic "optimistic retry" pattern — cheap because the
+    collision probability is low, so an infinite loop in practice runs once or twice.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — register and return</div>
+    Once a free port is found, it's immediately reserved in the dict (so a second concurrent upload
+    can't pick the same one) and handed back to the caller — which, in <code>file_controller.py</code>,
+    is what gets JSON-encoded as <code>&#123;"port": N&#125;</code> and shown to the user as the invite code.
+  </div>
+
+  <h3><code>start_file_server</code> — the one-shot TCP listener</h3>
+  <pre class="code"><span class="kw">def</span> <span class="fn">start_file_server</span>(self, port: <span class="builtin">int</span>) -> <span class="builtin">None</span>:
+    file_path = self.available_files.get(port)
+    <span class="kw">if</span> file_path <span class="kw">is</span> <span class="builtin">None</span>:
+        <span class="builtin">print</span>(<span class="str">f"No file associated with port: &#123;port&#125;"</span>)
+        <span class="kw">return</span>
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, <span class="num2">1</span>)
+    <span class="kw">try</span>:
+        server_socket.bind((<span class="str">""</span>, port))
+        server_socket.listen(<span class="num2">1</span>)
+        <span class="builtin">print</span>(<span class="str">f"Serving file '&#123;os.path.basename(file_path)&#125;' on port &#123;port&#125;"</span>)
+
+        client_socket, client_address = server_socket.accept()
+        <span class="builtin">print</span>(<span class="str">f"Client connected: &#123;client_address[0]&#125;"</span>)
+
+        threading.Thread(
+            target=self._send_file,
+            args=(client_socket, file_path),
+            daemon=<span class="builtin">True</span>,
+        ).start()
+    <span class="kw">except</span> OSError <span class="kw">as</span> e:
+        <span class="builtin">print</span>(<span class="str">f"Error starting file server on port &#123;port&#125;: &#123;e&#125;"</span>)
+    <span class="kw">finally</span>:
+        server_socket.close()</pre>
+
+  <div class="step">
+    <div class="step-label">Step 1 — look up the file, bail if it's gone</div>
+    If the port isn't in the dict (already consumed, or never existed), log and return. No exception,
+    no crash — this runs on a background thread so there's nobody waiting on a return value anyway.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — <code>socket.socket(AF_INET, SOCK_STREAM)</code></div>
+    This is the raw building block: <code>AF_INET</code> means "IPv4 address family," <code>SOCK_STREAM</code>
+    means "TCP" (as opposed to <code>SOCK_DGRAM</code> for UDP). This single line is the entire reason
+    the project avoids a web framework for this part — frameworks hide exactly this object.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — <code>SO_REUSEADDR</code></div>
+    Without this, rapidly restarting the app could fail to rebind a port still lingering in the OS's
+    TCP <code>TIME_WAIT</code> state from a previous connection. It tells the OS "let me reuse this
+    address even if a previous socket on it hasn't fully closed out yet."
+  </div>
+  <div class="step">
+    <div class="step-label">Step 4 — <code>bind</code> then <code>listen(1)</code></div>
+    <code>bind(("", port))</code> attaches the socket to "all network interfaces" on that port.
+    <code>listen(1)</code> turns it into a passive listening socket with a backlog queue of just 1 —
+    deliberate, because this is a <em>one-shot</em> server: exactly one peer is expected to ever
+    connect to this specific port for this specific file.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 5 — <code>accept()</code> blocks until a peer connects</div>
+    Execution stops here until someone (the download handler in §6.4) opens a TCP connection to
+    <code>localhost:&lt;port&gt;</code>. This is why <code>start_file_server</code> itself is launched
+    on its own background thread from <code>file_controller.py</code> — if it ran on the HTTP
+    handler's thread, the upload response would hang until someone downloaded the file.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 6 — hand the connected socket to <code>_send_file</code>, on yet another thread</div>
+    Once a peer connects, sending the actual bytes is delegated to a second background thread so
+    <code>start_file_server</code> can immediately fall through to its <code>finally</code> and close
+    the now-unneeded <em>listening</em> socket (not the client connection — that's a separate
+    socket object handed to <code>_send_file</code>).
+  </div>
+
+  <h3><code>_send_file</code> — the wire protocol</h3>
+  <pre class="code"><span class="kw">@staticmethod</span>
+<span class="kw">def</span> <span class="fn">_send_file</span>(client_socket: socket.socket, file_path: <span class="builtin">str</span>) -> <span class="builtin">None</span>:
+    filename = os.path.basename(file_path)
+    <span class="kw">try</span>:
+        header = <span class="str">f"Filename: &#123;filename&#125;\n"</span>.encode(<span class="str">"utf-8"</span>)
+        client_socket.sendall(header)
+
+        <span class="kw">with</span> <span class="builtin">open</span>(file_path, <span class="str">"rb"</span>) <span class="kw">as</span> f:
+            <span class="kw">while</span> <span class="builtin">True</span>:
+                chunk = f.read(<span class="num2">4096</span>)
+                <span class="kw">if not</span> chunk:
+                    <span class="kw">break</span>
+                client_socket.sendall(chunk)
+
+        <span class="builtin">print</span>(<span class="str">f"File '&#123;filename&#125;' sent to &#123;client_socket.getpeername()[0]&#125;"</span>)
+    <span class="kw">except</span> OSError <span class="kw">as</span> e:
+        <span class="builtin">print</span>(<span class="str">f"Error sending file to client: &#123;e&#125;"</span>)
+    <span class="kw">finally</span>:
+        client_socket.close()</pre>
+
+  <div class="step">
+    <div class="step-label">Step 1 — the entire "protocol" is one text line</div>
+    <code>b"Filename: cat.png\n"</code> is sent first, raw, with no length prefix and no
+    Content-Type — just enough for the receiver to recover the original filename. This is the
+    project's hand-rolled equivalent of an HTTP header, except there's exactly one of them and it's
+    terminated by <code>\n</code> instead of <code>\r\n\r\n</code>.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — stream the file in 4 KB chunks</div>
+    Reading the whole file into memory with one <code>f.read()</code> would work for small files but
+    defeats the purpose of "streaming" — and would blow up memory for large files. 4096 bytes
+    (one typical OS page / disk block size) is the classic buffer size for this kind of loop.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — <code>sendall</code> vs <code>send</code></div>
+    Plain <code>socket.send()</code> is allowed to write <em>fewer</em> bytes than you asked (a partial
+    write) and returns how many it actually sent — you'd have to loop and retry yourself.
+    <code>sendall()</code> does that retry loop internally and only returns once everything is sent
+    (or raises). Using it here is intentional correctness, not a shortcut — the manual byte-loop is
+    still fully visible in the 4096-byte read loop above it.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 4 — always close the socket</div>
+    The <code>finally</code> guarantees the TCP connection is torn down whether the transfer
+    succeeded or an <code>OSError</code> (e.g. peer disconnected mid-transfer) interrupted it.
+  </div>
+</section>
+
+<section id="multipart_parser">
+  <h2><span class="num">5</span> <span class="file-pill">p2p/multipart_parser.py</span></h2>
+  <p>This is the file most worth slowing down on, because it's solving a problem most developers never
+  see solved manually: <strong>how is a file upload actually encoded inside an HTTP request body?</strong></p>
+
+  <h3>Background: what does a multipart/form-data body actually look like?</h3>
+  <p>When a browser uploads a file via a <code>&lt;form&gt;</code> or <code>FormData</code>, the request
+  body is <em>not</em> just the raw file bytes — it's wrapped in a text-based envelope that looks
+  like this (boundary string shortened for readability):</p>
+  <div class="ascii">--BOUNDARY
+Content-Disposition: form-data; name="file"; filename="cat.png"
+Content-Type: image/png
+
+&lt;raw bytes of cat.png here&gt;
+--BOUNDARY--</div>
+  <p>The parser's whole job is to locate four things inside that envelope: the <code>filename</code>,
+  the <code>Content-Type</code>, where the headers end and raw bytes begin, and where the raw bytes
+  end (the boundary line).</p>
+
+  <pre class="code"><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> typing <span class="kw">import</span> Optional
+
+
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">ParseResult</span>:
+    filename: <span class="builtin">str</span>
+    content_type: <span class="builtin">str</span>
+    file_content: <span class="builtin">bytes</span></pre>
+  <div class="step">
+    <div class="step-label">Step 1 — <code>ParseResult</code> is just a typed tuple</div>
+    <code>@dataclass</code> is stdlib sugar that auto-generates <code>__init__</code>, giving us
+    <code>ParseResult(filename, content_type, file_content)</code> for free — this is bookkeeping,
+    not part of the "from scratch" parsing logic, so using the stdlib decorator here doesn't cut any
+    corners that matter.
+  </div>
+
+  <pre class="code"><span class="kw">def</span> <span class="fn">parse</span>(self) -> Optional[ParseResult]:
+    <span class="kw">try</span>:
+        header_end_marker = <span class="str">b"\r\n\r\n"</span>
+        header_end = self.data.find(header_end_marker)
+        <span class="kw">if</span> header_end == -<span class="num2">1</span>:
+            <span class="kw">return</span> <span class="builtin">None</span>
+
+        header_section = self.data[:header_end].decode(<span class="str">"ascii"</span>, errors=<span class="str">"replace"</span>)</pre>
+  <div class="step">
+    <div class="step-label">Step 1 — find the header/body boundary</div>
+    HTTP-style headers are always terminated by a blank line, which on the wire is the byte sequence
+    <code>\r\n\r\n</code> (carriage-return + line-feed, twice). <code>bytes.find()</code> does a raw
+    byte-sequence search — this is the manual, from-scratch equivalent of Java's
+    <code>indexOf</code>/array-scan; no multipart-aware library is doing this lookup for us.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — decode <em>only</em> the header portion as text</div>
+    Headers are guaranteed ASCII. The file's raw bytes (which could be anything — a JPEG, a zip, audio)
+    are <strong>never</strong> decoded as text — only the slice <em>before</em> <code>header_end</code>
+    is turned into a string. This is the key correctness detail: decoding the whole multipart body as
+    text (which the original Java actually did, via <code>new String(data)</code>) risks corrupting
+    bytes during the encode/decode round-trip; slicing first and only decoding the safe (ASCII) part
+    avoids that risk entirely while keeping the same "search for markers in a string" approach.
+  </div>
+
+  <pre class="code">        filename_marker = <span class="str">'filename="'</span>
+        filename_start = header_section.find(filename_marker)
+        <span class="kw">if</span> filename_start == -<span class="num2">1</span>:
+            <span class="kw">return</span> <span class="builtin">None</span>
+        filename_start += <span class="builtin">len</span>(filename_marker)
+        filename_end = header_section.find(<span class="str">'"'</span>, filename_start)
+        filename = header_section[filename_start:filename_end]</pre>
+  <div class="step">
+    <div class="step-label">Step 3 — extract the filename by marker + quote scanning</div>
+    Find the literal text <code>filename="</code>, skip past it, then find the <em>next</em> double
+    quote — everything between those two positions is the filename. No regex, no parsing library:
+    just two <code>.find()</code> calls and a slice. If the marker isn't present at all (not a file
+    field), bail out with <code>None</code>.
+  </div>
+
+  <pre class="code">        content_type_marker = <span class="str">"Content-Type: "</span>
+        content_type_start = header_section.find(content_type_marker, filename_end)
+        content_type = <span class="str">"application/octet-stream"</span>
+        <span class="kw">if</span> content_type_start != -<span class="num2">1</span>:
+            content_type_start += <span class="builtin">len</span>(content_type_marker)
+            content_type = header_section[content_type_start:].strip()</pre>
+  <div class="step">
+    <div class="step-label">Step 4 — extract Content-Type, with a sane default</div>
+    Searching starts <em>after</em> <code>filename_end</code> so it can't accidentally match a
+    <code>Content-Type</code> belonging to a different part. If the field genuinely has no
+    Content-Type header (some browsers omit it for certain field types), fall back to
+    <code>application/octet-stream</code> — "I don't know what this is, treat it as opaque binary."
+  </div>
+
+  <pre class="code">        content_start = header_end + <span class="builtin">len</span>(header_end_marker)
+
+        boundary_bytes = <span class="str">f"\r\n--&#123;self.boundary&#125;--"</span>.encode(<span class="str">"ascii"</span>)
+        content_end = self.data.find(boundary_bytes, content_start)
+
+        <span class="kw">if</span> content_end == -<span class="num2">1</span>:
+            boundary_bytes = <span class="str">f"\r\n--&#123;self.boundary&#125;"</span>.encode(<span class="str">"ascii"</span>)
+            content_end = self.data.find(boundary_bytes, content_start)
+
+        <span class="kw">if</span> content_end == -<span class="num2">1</span> <span class="kw">or</span> content_end &lt;= content_start:
+            <span class="kw">return</span> <span class="builtin">None</span>
+
+        file_content = self.data[content_start:content_end]
+        <span class="kw">return</span> ParseResult(filename, content_type, file_content)
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        <span class="builtin">print</span>(<span class="str">f"Error parsing multipart data: &#123;e&#125;"</span>)
+        <span class="kw">return</span> <span class="builtin">None</span></pre>
+  <div class="step">
+    <div class="step-label">Step 5 — the raw bytes start right after the blank line</div>
+    <code>content_start</code> is just an integer offset — no copying happens yet.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 6 — find where the raw bytes end: the boundary</div>
+    The multipart spec terminates the <em>last</em> part with <code>\r\n--BOUNDARY--</code> (trailing
+    double-dash) but a part in the <em>middle</em> of a multi-field form would instead be followed by
+    <code>\r\n--BOUNDARY</code> (no trailing dashes, another part follows). The code tries the
+    "final part" form first, and falls back to the "another part follows" form — this matters
+    because <code>FormData</code> uploads from a browser often include more than one part (e.g. other
+    form fields alongside the file).
+  </div>
+  <div class="step">
+    <div class="step-label">Step 7 — this <code>find</code> is doing a binary-safe sequence search</div>
+    Unlike the header section, <code>self.data</code> here is the <em>full original bytes object</em>
+    — searching for <code>boundary_bytes</code> inside it is a byte-for-byte scan across what may be
+    binary file content. This is exactly the manual "boundary sequence search" the original Java
+    implemented as its own <code>findSequence</code> loop; Python's <code>bytes.find</code> is the
+    same operation (a substring search over a byte array), just exposed as a built-in method rather
+    than something we'd hand-loop ourselves — same level of "from scratch" as Java's own
+    <code>String.indexOf</code>/array-scan calls.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 8 — slice out exactly the file bytes, nothing else</div>
+    <code>self.data[content_start:content_end]</code> is a pure byte-offset slice — completely
+    unaffected by anything that happened during the earlier ASCII-decode step, so binary files
+    (images, zips, executables) survive intact. (This is verified in the worked example, §8, with a
+    SHA-256 hash check.)
+  </div>
+  <div class="step">
+    <div class="step-label">Step 9 — fail safe, never crash the server</div>
+    Any unexpected exception (malformed input, missing boundary, whatever) is caught and turned into
+    a logged message + <code>None</code>, which <code>file_controller.py</code> turns into a clean
+    HTTP 400 response instead of a stack trace reaching the client.
+  </div>
+</section>
+
+<section id="file_controller">
+  <h2><span class="num">6</span> <span class="file-pill">p2p/file_controller.py</span></h2>
+  <p>This is the HTTP layer — the glue between "a browser made a request" and the two pieces above
+  (<code>MultipartParser</code> and <code>FileSharer</code>). It has five distinct pieces, in the
+  order they execute conceptually.</p>
+
+  <h3 id="fc-threadpool">6.1 <code>ThreadPoolHTTPServer</code></h3>
+  <pre class="code"><span class="kw">class</span> <span class="fn">ThreadPoolHTTPServer</span>(HTTPServer):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, server_address, handler_class, max_workers: <span class="builtin">int</span> = <span class="num2">10</span>):
+        <span class="builtin">super</span>().__init__(server_address, handler_class)
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
+
+    <span class="kw">def</span> <span class="fn">process_request</span>(self, request, client_address):
+        self.executor.submit(self._process_request_thread, request, client_address)
+
+    <span class="kw">def</span> <span class="fn">_process_request_thread</span>(self, request, client_address):
+        <span class="kw">try</span>:
+            self.finish_request(request, client_address)
+        <span class="kw">except</span> Exception:
+            self.handle_error(request, client_address)
+        <span class="kw">finally</span>:
+            self.shutdown_request(request)
+
+    <span class="kw">def</span> <span class="fn">shutdown_and_wait</span>(self):
+        self.executor.shutdown(wait=<span class="builtin">True</span>)</pre>
+  <div class="step">
+    <div class="step-label">Step 1 — why subclass at all?</div>
+    Plain <code>http.server.HTTPServer</code> is single-threaded: it accepts a connection, fully
+    handles it via <code>process_request</code>, then loops back to accept the next one. Two clients
+    can't be served at the same instant.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — overriding the exact extension point</div>
+    <code>process_request(request, client_address)</code> is the method the base class calls right
+    after <code>accept()</code> succeeds. By overriding just this one method to hand the work to
+    <code>self.executor.submit(...)</code> instead of running it inline, every other piece of
+    <code>http.server</code>'s machinery (request-line parsing, header parsing, routing to
+    <code>do_GET</code>/<code>do_POST</code>) is untouched and still does its job — just now on a
+    worker thread instead of the accept-loop thread.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — <code>finish_request</code> / <code>shutdown_request</code></div>
+    These are the two halves <code>process_request</code> normally calls back-to-back:
+    <code>finish_request</code> actually instantiates the handler class and runs the request;
+    <code>shutdown_request</code> closes the socket afterward. Splitting them into their own thread
+    function (<code>_process_request_thread</code>) and wrapping in <code>try/except/finally</code>
+    ensures a single bad request can't crash a worker thread without closing its socket, or kill the
+    server.
+  </div>
+  <div class="why">
+    <div class="label">Why not just use <code>socketserver.ThreadingMixIn</code>?</div>
+    That stdlib mixin would give you concurrency in one line — but it spawns a brand-new, uncapped
+    thread for every single connection. The Java original deliberately used a <em>fixed</em> pool of
+    10 (<code>Executors.newFixedThreadPool(10)</code>) specifically to demonstrate bounded resource
+    usage under load. <code>ThreadPoolExecutor(max_workers=10)</code> is the direct Python analogue
+    of that exact design decision, so this file reimplements the dispatch loop instead of reaching
+    for the one-line mixin.
+  </div>
+
+  <h3 id="fc-handler">6.2 <code>peershareRequestHandler</code> — routing &amp; CORS</h3>
+  <pre class="code"><span class="kw">def</span> <span class="fn">do_OPTIONS</span>(self):
+    self.send_response(<span class="num2">204</span>)
+    self._add_cors_headers()
+    self.end_headers()
+
+<span class="kw">def</span> <span class="fn">do_POST</span>(self):
+    <span class="kw">if</span> self.path == <span class="str">"/upload"</span> <span class="kw">or</span> self.path.startswith(<span class="str">"/upload"</span>):
+        self._handle_upload()
+    <span class="kw">else</span>:
+        self._send_text(<span class="num2">404</span>, <span class="str">"Not Found"</span>)
+
+<span class="kw">def</span> <span class="fn">do_GET</span>(self):
+    <span class="kw">if</span> self.path.startswith(<span class="str">"/download/"</span>):
+        self._handle_download()
+    <span class="kw">else</span>:
+        self._send_text(<span class="num2">404</span>, <span class="str">"Not Found"</span>)</pre>
+  <div class="step">
+    <div class="step-label">Step 1 — <code>do_GET</code>/<code>do_POST</code>/<code>do_OPTIONS</code> are a stdlib convention</div>
+    <code>BaseHTTPRequestHandler</code> automatically calls a method named <code>do_&lt;METHOD&gt;</code>
+    matching the incoming HTTP verb. Defining only these three means any other verb (PUT, DELETE...)
+    gets a built-in 501 automatically — we never have to handle that ourselves.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — manual routing by string prefix</div>
+    There's no router/framework — <code>self.path.startswith(...)</code> is the entire routing table.
+    This mirrors the Java version's <code>server.createContext("/upload", ...)</code> /
+    <code>createContext("/download", ...)</code> registration, just expressed as plain
+    <code>if</code>/<code>elif</code> instead of a context map.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — CORS and preflight</div>
+    Because the UI runs on a different origin during development (Next.js on :3000 talking to this
+    server on :8080), browsers send an <code>OPTIONS</code> preflight before the real
+    <code>POST</code>. Responding <code>204</code> with the right
+    <code>Access-Control-Allow-*</code> headers (in <code>_add_cors_headers</code>) is what lets the
+    browser proceed with the actual request at all.
+  </div>
+
+  <h3 id="fc-upload">6.3 <code>_handle_upload</code> — tying the parser to the filesystem</h3>
+  <pre class="code"><span class="kw">def</span> <span class="fn">_handle_upload</span>(self):
+    content_type = self.headers.get(<span class="str">"Content-Type"</span>)
+    <span class="kw">if not</span> content_type <span class="kw">or not</span> content_type.startswith(<span class="str">"multipart/form-data"</span>):
+        self._send_text(<span class="num2">400</span>, <span class="str">"Bad Request: Content-Type must be multipart/form-data"</span>)
+        <span class="kw">return</span>
+
+    <span class="kw">try</span>:
+        boundary = content_type.split(<span class="str">"boundary="</span>, <span class="num2">1</span>)[<span class="num2">1</span>]
+
+        content_length = <span class="builtin">int</span>(self.headers.get(<span class="str">"Content-Length"</span>, <span class="num2">0</span>))
+        request_data = self.rfile.read(content_length)
+
+        parser = MultipartParser(request_data, boundary)
+        result = parser.parse()
+        <span class="kw">if</span> result <span class="kw">is</span> <span class="builtin">None</span>:
+            self._send_text(<span class="num2">400</span>, <span class="str">"Bad Request: Could not parse file content"</span>)
+            <span class="kw">return</span>
+
+        filename = result.filename.strip() <span class="kw">if</span> result.filename <span class="kw">else</span> <span class="str">""</span>
+        <span class="kw">if not</span> filename:
+            filename = <span class="str">"unnamed-file"</span>
+
+        unique_filename = <span class="str">f"&#123;uuid.uuid4()&#125;_&#123;os.path.basename(filename)&#125;"</span>
+        file_path = os.path.join(self.server.upload_dir, unique_filename)
+
+        <span class="kw">with</span> <span class="builtin">open</span>(file_path, <span class="str">"wb"</span>) <span class="kw">as</span> f:
+            f.write(result.file_content)
+
+        port = self.server.file_sharer.offer_file(file_path)
+
+        threading.Thread(
+            target=self.server.file_sharer.start_file_server,
+            args=(port,),
+            daemon=<span class="builtin">True</span>,
+        ).start()
+
+        self._send_text(<span class="num2">200</span>, json.dumps(&#123;<span class="str">"port"</span>: port&#125;), content_type=<span class="str">"application/json"</span>)
+    <span class="kw">except</span> Exception <span class="kw">as</span> e:
+        self._send_text(<span class="num2">500</span>, <span class="str">f"Server error: &#123;e&#125;"</span>)</pre>
+
+  <div class="step">
+    <div class="step-label">Step 1 — validate Content-Type up front</div>
+    Anything not announcing itself as <code>multipart/form-data</code> is rejected immediately — no
+    point even trying to parse it.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — pull the boundary string out of the header</div>
+    The header looks like <code>Content-Type: multipart/form-data; boundary=----WebKitForm...</code> —
+    everything after <code>boundary=</code> is the exact delimiter string the browser used between
+    parts, and it's what gets handed to <code>MultipartParser</code> so it knows what to search for.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — read exactly <code>Content-Length</code> bytes</div>
+    <code>self.rfile</code> is a buffered stream over the live TCP socket. We can't just
+    <code>.read()</code> until EOF (the connection might be kept alive for more requests) — we have
+    to read precisely the number of bytes the client told us to expect.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 4 — hand bytes + boundary to the parser, bail cleanly on failure</div>
+    This is the handoff into §5. A <code>None</code> result (malformed multipart body) becomes a
+    clean 400, not a crash.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 5 — generate a collision-proof filename and write to disk</div>
+    <code>uuid.uuid4()</code> generates a random 128-bit identifier; prefixing the original filename
+    with it means two different uploads named <code>photo.jpg</code> never overwrite each other on
+    disk, while <code>os.path.basename(filename)</code> strips any path components the client might
+    have sent (defense against path traversal like <code>../../etc/passwd</code> as a "filename").
+  </div>
+  <div class="step">
+    <div class="step-label">Step 6 — claim a port, then start the listener in the background</div>
+    <code>offer_file</code> (§4) returns synchronously with a port number. Starting
+    <code>start_file_server</code> on its own thread is essential: that call <code>accept()</code>s
+    and blocks (§4, Step 5) — if it ran here, the HTTP response below would never get sent because
+    this thread would be stuck waiting for a peer to connect.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 7 — respond with the invite code</div>
+    <code>&#123;"port": 51263&#125;</code> is the entire API contract the frontend depends on — that
+    number is what gets shown to the user to share.
+  </div>
+
+  <h3 id="fc-download">6.4 <code>_handle_download</code> — bridging HTTP to the raw socket protocol</h3>
+  <pre class="code"><span class="kw">def</span> <span class="fn">_handle_download</span>(self):
+    port_str = self.path.rsplit(<span class="str">"/"</span>, <span class="num2">1</span>)[-<span class="num2">1</span>]
+    <span class="kw">try</span>:
+        port = <span class="builtin">int</span>(port_str)
+    <span class="kw">except</span> ValueError:
+        self._send_text(<span class="num2">400</span>, <span class="str">"Bad Request: Invalid port number"</span>)
+        <span class="kw">return</span>
+
+    <span class="kw">try</span>:
+        <span class="kw">with</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM) <span class="kw">as</span> peer_socket:
+            peer_socket.connect((<span class="str">"localhost"</span>, port))
+            ...
+            header_bytes = bytearray()
+            <span class="kw">while</span> <span class="builtin">True</span>:
+                b = peer_socket.recv(<span class="num2">1</span>)
+                <span class="kw">if not</span> b <span class="kw">or</span> b == <span class="str">b"\n"</span>:
+                    <span class="kw">break</span>
+                header_bytes += b
+            header = header_bytes.decode(<span class="str">"utf-8"</span>, errors=<span class="str">"replace"</span>).strip()
+            <span class="kw">if</span> header.startswith(<span class="str">"Filename: "</span>):
+                filename = header[<span class="builtin">len</span>(<span class="str">"Filename: "</span>):]
+
+            <span class="kw">while</span> <span class="builtin">True</span>:
+                chunk = peer_socket.recv(UPLOAD_CHUNK_SIZE)
+                <span class="kw">if not</span> chunk:
+                    <span class="kw">break</span>
+                tmp_file.write(chunk)
+            ...
+            <span class="kw">with</span> <span class="builtin">open</span>(tmp_path, <span class="str">"rb"</span>) <span class="kw">as</span> f:
+                <span class="kw">while</span> <span class="builtin">True</span>:
+                    chunk = f.read(UPLOAD_CHUNK_SIZE)
+                    <span class="kw">if not</span> chunk:
+                        <span class="kw">break</span>
+                    self.wfile.write(chunk)</pre>
+
+  <div class="step">
+    <div class="step-label">Step 1 — the port <em>is</em> the URL's last path segment</div>
+    <code>GET /download/51263</code> → <code>rsplit("/", 1)[-1]</code> → <code>"51263"</code>. No
+    routing framework needed for a path parameter this simple.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — open a brand-new socket <em>to itself</em></div>
+    This is the conceptual hinge of the whole app: the browser never talks to port 51263 directly.
+    It asks the API server (port 8080) to download, and the API server — acting as a client this
+    time — opens its <em>own</em> raw TCP connection to <code>localhost:51263</code>, the same
+    listener that <code>FileSharer.start_file_server</code> opened in §4.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — read the filename header one byte at a time</div>
+    Recall the sender (§4) writes <code>b"Filename: cat.png\n"</code> with no length prefix.
+    The only safe way to know where that line ends without a length prefix is to read byte-by-byte
+    until hitting <code>\n</code> — reading in a bigger chunk risks reading past the newline and
+    swallowing the start of the actual file bytes along with it.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 4 — stream the rest straight to a temp file</div>
+    Once the header line is consumed, every remaining byte on this socket is pure file content.
+    It's buffered to a temp file (not memory) in <code>UPLOAD_CHUNK_SIZE</code> (4096-byte) reads —
+    same chunk size convention as the sender side, again to avoid holding a potentially huge file
+    fully in RAM.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 5 — re-stream the temp file back out over HTTP</div>
+    Now acting as an HTTP server again, it sets <code>Content-Disposition: attachment; filename=...</code>
+    (this is what makes the browser show a save-file dialog with the right name) and
+    <code>Content-Length</code> (now known exactly, since the file is fully on disk), then pumps the
+    temp file's bytes into <code>self.wfile</code> — the live response stream back to the browser —
+    in the same 4096-byte chunks.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 6 — clean up</div>
+    The temp file is deleted in a <code>finally</code> regardless of success or failure, so repeated
+    downloads don't leak files into the OS temp directory.
+  </div>
+  <div class="why">
+    <div class="label">Why round-trip through a temp file instead of streaming peer→browser directly?</div>
+    It mirrors the original Java design exactly, and it has a real benefit: the browser doesn't get a
+    response at all (not even headers) until the <em>entire</em> file has been pulled from the peer
+    socket — so a slow or flaky peer connection can't leave the browser hanging on a half-started
+    download with no <code>Content-Length</code> to show progress against.
+  </div>
+</section>
+
+<section id="fc-controller-wrap">
+  <h3 id="fc-controller">6.5 <code>FileController</code> — wiring it all together</h3>
+  <pre class="code"><span class="kw">class</span> <span class="fn">FileController</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, port: <span class="builtin">int</span>):
+        self.file_sharer = FileSharer()
+        self.upload_dir = os.path.join(tempfile.gettempdir(), <span class="str">"peershare-uploads"</span>)
+        os.makedirs(self.upload_dir, exist_ok=<span class="builtin">True</span>)
+
+        self.server = ThreadPoolHTTPServer((<span class="str">""</span>, port), peershareRequestHandler, max_workers=<span class="num2">10</span>)
+        self.server.file_sharer = self.file_sharer
+        self.server.upload_dir = self.upload_dir
+
+    <span class="kw">def</span> <span class="fn">start</span>(self):
+        self._serve_thread = threading.Thread(target=self.server.serve_forever, daemon=<span class="builtin">True</span>)
+        self._serve_thread.start()
+
+    <span class="kw">def</span> <span class="fn">stop</span>(self):
+        self.server.shutdown()
+        self.server.shutdown_and_wait()
+        self.server.server_close()</pre>
+  <div class="step">
+    <div class="step-label">Step 1 — one shared <code>FileSharer</code> for the whole process</div>
+    Created once here, not per-request — so its <code>available_files</code> dict accumulates every
+    upload/port mapping across the server's whole lifetime.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — attaching shared state to the server object</div>
+    <code>BaseHTTPRequestHandler</code> creates a brand-new handler instance for <em>every single
+    request</em> — there's no natural place on the handler itself to keep long-lived state. The fix:
+    stash <code>file_sharer</code> and <code>upload_dir</code> as attributes on <code>self.server</code>
+    (the one long-lived <code>HTTPServer</code> instance, accessible from any handler as
+    <code>self.server</code>), which both <code>_handle_upload</code> and (indirectly) the rest of
+    the app rely on.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — <code>serve_forever</code> on its own daemon thread</div>
+    <code>serve_forever()</code> is a blocking call (it loops accepting connections until told to
+    stop). Running it on a background thread is what lets <code>app.py</code>'s main thread stay
+    free to wait on <code>input()</code> for the user to press Enter.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 4 — graceful shutdown order matters</div>
+    <code>server.shutdown()</code> stops the <code>serve_forever</code> accept loop;
+    <code>shutdown_and_wait()</code> then waits for any in-flight worker threads in the pool to
+    actually finish; only then is <code>server_close()</code> called to release the listening socket.
+    Doing it in the wrong order could close the socket out from under a thread still using it.
+  </div>
+</section>
+
+<section id="app">
+  <h2><span class="num">7</span> <span class="file-pill">app.py</span></h2>
+  <pre class="code"><span class="kw">def</span> <span class="fn">main</span>():
+    <span class="kw">try</span>:
+        file_controller = FileController(<span class="num2">8080</span>)
+        file_controller.start()
+
+        <span class="builtin">print</span>(<span class="str">"peershare server started on port 8080"</span>)
+
+        <span class="kw">def</span> <span class="fn">handle_shutdown</span>(signum, frame):
+            file_controller.stop()
+            sys.exit(<span class="num2">0</span>)
+
+        signal.signal(signal.SIGINT, handle_shutdown)
+        signal.signal(signal.SIGTERM, handle_shutdown)
+
+        <span class="builtin">print</span>(<span class="str">"Press Enter to stop the server"</span>)
+        <span class="builtin">input</span>()
+        file_controller.stop()
+    <span class="kw">except</span> OSError <span class="kw">as</span> e:
+        <span class="builtin">print</span>(<span class="str">f"Error starting server: &#123;e&#125;"</span>, file=sys.stderr)
+        sys.exit(<span class="num2">1</span>)</pre>
+  <div class="step">
+    <div class="step-label">Step 1 — start, then immediately return control</div>
+    <code>file_controller.start()</code> returns right away (it just launches the background thread
+    from §6.5 Step 3) — it does not block.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 2 — two ways to stop, mirroring Java's shutdown hook</div>
+    The Java original registered a JVM shutdown hook (fires on Ctrl+C or kill signal) <em>and</em>
+    blocked on <code>System.in.read()</code> waiting for Enter. Python has no shutdown-hook
+    equivalent, so this registers OS signal handlers for <code>SIGINT</code> (Ctrl+C) and
+    <code>SIGTERM</code> (e.g. <code>kill</code>, or a container orchestrator stopping the process)
+    that both call <code>file_controller.stop()</code>, while the main thread separately blocks on
+    plain <code>input()</code> for the "press Enter" path.
+  </div>
+  <div class="step">
+    <div class="step-label">Step 3 — startup failure handling</div>
+    If port 8080 is already in use, <code>FileController.__init__</code> → <code>HTTPServer.__init__</code>
+    raises <code>OSError</code> (e.g. <code>[Errno 98] Address already in use</code>), which is caught
+    here and turned into a clean error message + exit code 1, instead of a raw traceback.
+  </div>
+</section>
+
+<section id="worked">
+  <h2><span class="num">8</span> Trace a real upload + download</h2>
+  <p>Here's the whole system worked through with concrete values, the way you'd trace through a
+  recursive function by hand.</p>
+
+  <div class="card">
+    <strong>Given:</strong> the server is running (<code>python app.py</code>), and a browser
+    uploads a 3-byte text file called <code>hi.txt</code> containing the bytes <code>h</code>,
+    <code>i</code>, <code>!</code>.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 1 — the browser builds the multipart body</div>
+    Axios/FormData constructs (boundary shortened to <code>X</code> for legibility):
+    <pre class="code">--X
+Content-Disposition: form-data; name="file"; filename="hi.txt"
+Content-Type: text/plain
+
+hi!
+--X--</pre>
+    and sends <code>POST /upload</code> with header
+    <code>Content-Type: multipart/form-data; boundary=X</code>.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 2 — <code>do_POST</code> routes to <code>_handle_upload</code></div>
+    <code>self.path == "/upload"</code> matches. <code>boundary = "X"</code> is extracted from the
+    header. <code>self.rfile.read(content_length)</code> pulls in the exact body shown above as raw
+    bytes.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 3 — <code>MultipartParser.parse()</code> runs</div>
+    <ul>
+      <li><code>header_end</code> = index of <code>\r\n\r\n</code> → right after the
+      <code>Content-Type: text/plain</code> line.</li>
+      <li><code>filename</code> = text between <code>filename="</code> and the next <code>"</code> →
+      <code>"hi.txt"</code>.</li>
+      <li><code>content_type</code> = <code>"text/plain"</code>.</li>
+      <li><code>content_start</code> = the byte position right after the blank line — pointing at
+      the <code>h</code> in <code>hi!</code>.</li>
+      <li>Search for <code>\r\n--X--</code> (final-part form) finds it right after <code>hi!</code>
+      → <code>content_end</code> set there.</li>
+      <li><code>file_content = data[content_start:content_end]</code> = exactly the 3 bytes
+      <code>hi!</code>.</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 4 — saved to disk</div>
+    Say <code>uuid.uuid4()</code> produces <code>a1b2...</code>. The file is written to
+    <code>&lt;tmp&gt;/peershare-uploads/a1b2..._hi.txt</code> containing exactly <code>hi!</code>.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 5 — a port is claimed</div>
+    <code>upload_utils.generate_code()</code> rolls, say, <code>52777</code>. It's not in
+    <code>available_files</code> yet, so it's registered:
+    <code>available_files[52777] = ".../a1b2..._hi.txt"</code>.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 6 — the one-shot listener spins up on a background thread</div>
+    A new <code>socket.socket()</code> binds to <code>("", 52777)</code> and calls
+    <code>listen(1)</code>, then blocks on <code>accept()</code>. Meanwhile, the HTTP response
+    <code>&#123;"port": 52777&#125;</code> is sent back to the browser — the whole upload request
+    is now complete, even though nobody has downloaded anything yet.
+  </div>
+
+  <div class="card">
+    <strong>Given:</strong> someone (could be the same browser, could be a phone on the same network)
+    now requests <code>GET /download/52777</code>.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 7 — <code>do_GET</code> routes to <code>_handle_download</code></div>
+    <code>port = int("52777")</code>. A new socket is opened: <code>peer_socket.connect(("localhost", 52777))</code>.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 8 — that connect() is exactly what <code>accept()</code> from Step 6 was waiting for</div>
+    <code>start_file_server</code>'s blocked <code>accept()</code> returns with the new connection.
+    It launches <code>_send_file</code> on another thread, which writes:
+    <code>b"Filename: a1b2..._hi.txt\n"</code> followed immediately by the 3 raw bytes <code>hi!</code>,
+    then closes its socket.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 9 — the download handler reads it back</div>
+    Reads byte-by-byte until <code>\n</code> → recovers <code>filename = "a1b2..._hi.txt"</code>.
+    Then <code>recv(4096)</code> returns <code>b"hi!"</code> (3 bytes — shorter than the buffer size,
+    which is fine, that's normal TCP behavior), writes it to a temp file. The next <code>recv()</code>
+    call returns <code>b""</code> (peer closed the connection) → loop ends.
+  </div>
+
+  <div class="step">
+    <div class="step-label">Step 10 — re-served over HTTP</div>
+    <code>Content-Disposition: attachment; filename="a1b2..._hi.txt"</code>,
+    <code>Content-Length: 3</code>, then the 3 bytes <code>hi!</code> are written to
+    <code>self.wfile</code>. The temp file is deleted. The browser shows a save dialog and saves a
+    3-byte file containing exactly <code>hi!</code>.
+  </div>
+
+  <div class="answer">
+    <div class="label">Answer</div>
+    The 3 original bytes (<code>h</code>, <code>i</code>, <code>!</code>) survive two full protocol
+    hops — multipart-over-HTTP in, then a hand-rolled-header-over-raw-TCP out — completely unchanged.
+    This was verified for real during development with a 50&nbsp;KB random binary file: SHA-256 of
+    the file before upload and after download matched exactly, confirming the byte-slicing in the
+    multipart parser (§5, Step 8) and the chunked socket transfer (§4) introduce zero corruption.
+  </div>
+</section>
+
+<section id="why">
+  <h2><span class="num">9</span> Why it's built this way (recap)</h2>
+  <div class="grid2">
+    <div class="card">
+      <strong>Things deliberately <em>not</em> hand-rolled</strong>
+      <ul>
+        <li>HTTP request-line/header parsing — <code>http.server</code> (stdlib), matching the
+        original's use of the JDK's own <code>HttpServer</code>.</li>
+        <li><code>ParseResult</code> boilerplate — <code>@dataclass</code> (pure bookkeeping).</li>
+        <li>UUIDs, JSON encoding, temp file creation — all stdlib utility, not part of the protocol
+        being taught.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <strong>Things deliberately hand-rolled</strong>
+      <ul>
+        <li>Locating <code>filename</code>/<code>Content-Type</code>/boundary inside a multipart body
+        — manual byte/string scanning, no <code>cgi</code>/<code>email</code>/<code>python-multipart</code>.</li>
+        <li>The entire P2P transfer — raw <code>socket.socket()</code>, a custom one-line text header,
+        manual chunked read/write loops.</li>
+        <li>The bounded worker thread pool dispatching HTTP connections — a manual
+        <code>process_request</code> override, not <code>ThreadingMixIn</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="glossary">
+  <h2><span class="num">10</span> Glossary</h2>
+  <dl class="glossary">
+    <dt>Socket</dt>
+    <dd>An OS-level handle representing one end of a network connection. <code>socket.socket(AF_INET, SOCK_STREAM)</code> creates a TCP/IPv4 one.</dd>
+    <dt>bind / listen / accept</dt>
+    <dd>The three steps a TCP server takes: claim a local address (<code>bind</code>), start
+    queueing incoming connections (<code>listen</code>), then pull one off the queue and get a
+    socket connected to that specific client (<code>accept</code>).</dd>
+    <dt>connect</dt>
+    <dd>The client-side counterpart to <code>accept</code> — actively opens a connection to a
+    listening server's address.</dd>
+    <dt>TIME_WAIT / SO_REUSEADDR</dt>
+    <dd>After a TCP connection closes, the OS holds the port briefly to catch stray packets.
+    <code>SO_REUSEADDR</code> lets a new socket bind to that port anyway.</dd>
+    <dt>multipart/form-data</dt>
+    <dd>The MIME content type browsers use to encode file uploads — a text-delimited envelope
+    (boundary string) wrapping one or more parts, each with its own small header block and raw body.</dd>
+    <dt>Boundary</dt>
+    <dd>A unique delimiter string (chosen by the browser) that separates parts in a multipart body
+    and marks the end of the whole body (with a trailing <code>--</code>).</dd>
+    <dt>Daemon thread</dt>
+    <dd>A background thread that doesn't keep the process alive on its own — if the main thread
+    exits, daemon threads are killed without waiting for them.</dd>
+    <dt>Thread pool / Executor</dt>
+    <dd>A fixed set of reusable worker threads that pick up submitted jobs from a queue, instead of
+    spawning a brand-new thread per job (which has no upper bound on concurrency).</dd>
+    <dt>Dynamic/ephemeral ports</dt>
+    <dd>Ports 49152–65535, set aside by IANA for short-lived, ad-hoc use rather than fixed/well-known services.</dd>
+    <dt>Content-Length / Content-Disposition</dt>
+    <dd>HTTP response headers: the former tells the client exactly how many bytes to expect; the
+    latter (with <code>attachment; filename=...</code>) tells the browser to save the response as a
+    file with that name instead of rendering it.</dd>
+  </dl>
+</section>
+
+</main>
+</div>
+</body>
+</html>
