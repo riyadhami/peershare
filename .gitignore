@@ -1,1 +1,31 @@
 .vercel
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+env/
+
+# Node / Next.js (ui/)
+node_modules/
+.next/
+out/
+
+# Lambda build artifacts
+lambda_backend/function.zip
+*.zip
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
